@@ -225,11 +225,12 @@ function computeDepth(rig){
   // Vertikale Komponente
   const buoy = 0.06 * m * G;     // kleiner Auftrieb
   let Veff = m*G - buoy;
-  if (rig.lureType === 'wobbler'){
-    const ref = rig.snapDive? Math.max(0.5, rig.snapDive) : 3.0;
-    const diveGain = 0.45 * (ref/3.0);
-    Veff += diveGain * v*v;
-  }
+if (rig.lureType === 'wobbler'){
+  const ref = rig.snapDive? Math.max(0.5, rig.snapDive) : 3.0;
+  const diveGain = 0.12 * (ref/3.0);            // realistischer Faktor (~1/4)
+  Veff += diveGain * v*v;                       // N
+}
+
   if (rig.lureType === 'planer') Veff *= 0.7;
   if (rig.lureType === 'downrigger') Veff *= 1.6;
 
