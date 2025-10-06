@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Trolling Depth (metrisch) – HappyHound</title>
+<meta name="theme-color" content="#0b0f14" />
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self';">
+<meta name="color-scheme" content="dark">
+<style>
+  :root { --bg:#0b0f14; --panel:#121821; --acc:#3aa675; --muted:#8aa0b2; --txt:#eef3f7; --warn:#f6c177; --bad:#f07979; }
+  html,body { margin:0; background:var(--bg); color:var(--txt); font:16px/1.45 system-ui,Segoe UI,Roboto,Arial; }
+  .wrap { max-width:960px; margin:0 auto; padding:16px; }
+  h1 { font-size:22px; margin:8px 0 12px; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; }
+  .card { background:var(--panel); border-radius:14px; padding:14px; flex:1 1 280px; box-shadow:0 8px 22px rgba(0,0,0,.28); }
+  label { display:block; font-size:13px; color:var(--muted); margin-bottom:6px; }
+  input, select { width:100%; padding:11px 12px; border-radius:10px; border:1px solid #223244; background:#0f141b; color:var(--txt); }
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0;}
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btn { background:var(--acc); color:#072; border:0; padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:700; }
+  .btn.sec { background:#1f2a37; color:var(--txt); }
+  .btn.dang { background:#6b1e1e; color:#f7dcdc; }
+  .btn.ghost { background:transparent; color:var(--muted); border:1px dashed #2a394a; }
+  .toolbar { display:flex; gap:8px; flex-wrap:wrap; }
+  .out { font-size:30px; font-weight:900; letter-spacing:.3px; }
+  .hint { color:var(--muted); font-size:13px; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:99px; background:#1a2430; color:#9fb3c8; font-size:12px; }
+  canvas { width:100%; height:240px; background:#0f141b; border-radius:12px; }
+  .ok { color:#9ae6b4; } .warn { color:var(--warn);} .bad { color:var(--bad);}
+  .footer { color:#6e859b; font-size:12px; margin-top:14px; text-align:center;}
+  .install { position:fixed; bottom:14px; right:14px; z-index:5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎣 Trolling Depth (metrisch)</h1>
+
+  <!-- RIG LIBRARY -->
+  <div class="row">
+    <div class="card" style="flex:1 1 100%">
+      <div class="toolbar">
+        <select id="rigSelect" style="flex:1"></select>
+        <button class="btn" id="btnNew" title="Neues Rig anlegen">Neu</button>
+        <button class="btn sec" id="btnSave" title="Rig speichern">Speichern</button>
+        <button class="btn sec" id="btnDup" title="Rig duplizieren">Duplizieren</button>
+        <button class="btn dang" id="btnDel" title="Rig löschen">Löschen</button>
+        <button class="btn ghost" id="btnExport" title="Alle Rigs exportieren">Export</button>
+        <button class="btn ghost" id="btnImport" title="Rigs importieren (JSON)">Import</button>
+      </div>
+      <div class="hint" id="rigMeta"></div>
+    </div>
+  </div>
+
+  <!-- INPUTS + OUTPUT -->
+  <div class="row">
+    <div class="card">
+      <div class="grid">
+        <div>
+          <label for="lineLen">Schnurlänge (m)</label>
+          <input id="lineLen" type="number" min="1" max="400" step="1" value="30">
+        </div>
+        <div>
+          <label for="speed">Geschwindigkeit (km/h)</label>
+          <input id="speed" type="number" min="0.5" max="12" step="0.1" value="3.2">
+        </div>
+        <div>
+          <label for="lineType">Schnurtyp</label>
+          <select id="lineType">
+            <option value="braid">Geflecht</option>
+            <option value="mono">Monofil</option>
+            <option value="fluoro">Fluorocarbon</option>
+            <option value="leadcore">Bleikern</option>
+          </select>
+        </div>
+        <div>
+          <label for="lineDia">Durchmesser (mm)</label>
+          <input id="lineDia" type="number" min="0.06" max="0.80" step="0.01" value="0.18">
+        </div>
+        <div>
+          <label for="lureType">Ködertyp</label>
+          <select id="lureType">
+            <option value="wobbler">Wobbler/Crankbait</option>
+            <option value="spoon">Spoon/Blinker</option>
+            <option value="softbait">Gummi + Jig</option>
+            <option value="jerk">Jerk/Glide</option>
+            <option value="downrigger">Downrigger</option>
+            <option value="planer">Sideplaner</option>
+          </select>
+        </div>
+        <div>
+          <label for="lureMass">Ködergewicht inkl. Haken (g)</label>
+          <input id="lureMass" type="number" min="1" max="400" step="1" value="40">
+        </div>
+        <div>
+          <label for="snapDive">Hersteller-Tiefe @30 m / 3 km/h (m) (optional)</label>
+          <input id="snapDive" type="number" min="0" max="25" step="0.1" placeholder="z.B. 3.5">
+        </div>
+        <div>
+          <label for="inlineWeight">Zusatzblei (g) (optional)</label>
+          <input id="inlineWeight" type="number" min="0" max="400" step="1" value="0">
+        </div>
+        <div>
+          <label for="targetDepth">Zieltiefe (m) (optional)</label>
+          <input id="targetDepth" type="number" min="0.5" max="25" step="0.1" placeholder="z.B. 4.0">
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button class="btn" id="btnSolve">Berechnen</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:8px">Tipp: Trage eine Hersteller-Tauchtiefe ein, damit der Algorithmus deinen Wobbler-Abtrieb besser skaliert.</div>
+    </div>
+
+    <div class="card">
+      <label>Geschätzte Tiefe</label>
+      <div class="out"><span id="depthOut">–</span> m <span id="bandOut" class="hint"></span></div>
+      <div class="hint" id="angleOut"></div>
+      <div style="margin-top:12px" class="toolbar">
+        <button class="btn sec" id="btnAim">Schnurlänge für Zieltiefe</button>
+        <button class="btn sec" id="btnGPS" title="Geschwindigkeit vom GPS übernehmen">GPS-Speed</button>
+        <button class="btn sec" id="btnCal" title="Kalibrieren mit Echolotwert">Kalibrieren</button>
+        <button class="btn ghost" id="btnResetCal" title="Kalibrierung zurücksetzen">Kalibrierung zurücksetzen</button>
+      </div>
+      <div class="hint" id="calInfo"></div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="row">
+    <div class="card" style="flex:1 1 100%">
+      <label>Dive Curve (aktuelles Rig)</label>
+      <canvas id="chart" width="920" height="240" aria-label="Dive Curve"></canvas>
+      <div class="hint" style="margin-top:8px">Linie: Tiefe über Schnurlänge bei aktueller Geschwindigkeit.</div>
+    </div>
+  </div>
+
+  <div class="footer">PWA • Offlinefähig • Daten lokal (localStorage) • Made for Schleppangler</div>
+</div>
+
+<!-- Install-Hinweis -->
+<div class="install"><button id="installBtn" class="btn" style="display:none">Als App installieren</button></div>
+
+<script>
+// ===== PWA: Service Worker & Install =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+}
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt=e; document.getElementById('installBtn').style.display='inline-block'; });
+document.getElementById('installBtn').onclick = async ()=>{
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt=null;
+  document.getElementById('installBtn').style.display='none';
+};
+
+// ===== Storage =====
+const LS_KEY = 'troll_rigs_v1';
+let rigs = [];
+try { rigs = JSON.parse(localStorage.getItem(LS_KEY)||'[]'); } catch(e){ rigs=[]; }
+let currentRigId = null;
+
+function saveRigs(){ localStorage.setItem(LS_KEY, JSON.stringify(rigs)); refreshSelect(); }
+function refreshSelect(){
+  const sel = document.getElementById('rigSelect');
+  sel.innerHTML = '';
+  rigs.forEach(r => { const o=document.createElement('option'); o.value=r.id; o.textContent=r.name; sel.appendChild(o); });
+  if (currentRigId && rigs.some(r=>r.id===currentRigId)) sel.value = currentRigId;
+  const c = rigs.find(r=>r.id===currentRigId);
+  const meta = c ? `Kalibrierung: bias ${fmt(c.calib?.bias||0)} m, scale ${fmt(c.calib?.scale||1)}` : (rigs.length?`${rigs.length} Rigs gespeichert`:'Keine Rigs gespeichert');
+  document.getElementById('rigMeta').textContent = meta;
+}
+
+function uiToRig(){
+  return {
+    id: currentRigId || crypto.randomUUID(),
+    name: rigs.find(r=>r.id===currentRigId)?.name || suggestName(),
+    lineLen: num('lineLen'), speed: num('speed'),
+    lineType: val('lineType'), lineDia: num('lineDia'),
+    lureType: val('lureType'), lureMass: num('lureMass'),
+    snapDive: num('snapDive', null), inlineWeight: num('inlineWeight'),
+    targetDepth: num('targetDepth', null),
+    calib: rigs.find(r=>r.id===currentRigId)?.calib || {bias:0, scale:1}
+  };
+}
+function rigToUI(r){
+  setv('lineLen', r.lineLen); setv('speed', r.speed);
+  setv('lineType', r.lineType); setv('lineDia', r.lineDia);
+  setv('lureType', r.lureType); setv('lureMass', r.lureMass);
+  setv('snapDive', r.snapDive??''); setv('inlineWeight', r.inlineWeight);
+  setv('targetDepth', r.targetDepth??'');
+  showCal(r.calib);
+}
+function setv(id, v){ document.getElementById(id).value = v; }
+function val(id){ return document.getElementById(id).value; }
+function num(id, fallback=0){ const v=document.getElementById(id).value; return v===''?fallback:parseFloat(v); }
+function suggestName(){ return `${val('lureType')} • ${num('lureMass')}g • ${val('lineType')} ${num('lineDia')}mm`; }
+function fmt(x){ return (Math.round(x*100)/100).toFixed(2); }
+
+// ===== Physik-Näherung (kalibrierbar) =====
+const CD_BY_LURE = { wobbler:0.9, spoon:0.6, softbait:0.7, jerk:0.5, downrigger:0.2, planer:0.7 };
+const AREA_FACTOR = 0.0006;   // m² pro g^(2/3) – heuristisch
+const LINE_CD_PER_M = { braid:0.004, mono:0.006, fluoro:0.005, leadcore:0.007 }; // Drag/m via Ø-Korrektur
+const RHO = 1000;  // kg/m³
+const G   = 9.81;
+
+function computeDepth(rig){
+  const L = Math.max(1, rig.lineLen);
+  const v = Math.max(0.2, rig.speed/3.6);
+  const m = Math.max(0.001, (rig.lureMass + rig.inlineWeight)/1000);
+
+  const Cd = (CD_BY_LURE[rig.lureType]||0.7);
+  const A  = AREA_FACTOR * Math.pow(m*1000, 2/3);
+  const D_lure = 0.5 * RHO * Cd * A * v*v;
+
+  const basePerM = LINE_CD_PER_M[rig.lineType]||0.005;
+  const diaScale = clamp(rig.lineDia/0.18, 0.5, 2.2);
+  const D_line = basePerM * diaScale * L * v*v;
+
+  // Vertikale Komponente
+  const buoy = 0.06 * m * G;     // kleiner Auftrieb
+  let Veff = m*G - buoy;
+  if (rig.lureType === 'wobbler'){
+    const ref = rig.snapDive? Math.max(0.5, rig.snapDive) : 3.0;
+    const diveGain = 0.45 * (ref/3.0);
+    Veff += diveGain * v*v;
+  }
+  if (rig.lureType === 'planer') Veff *= 0.7;
+  if (rig.lureType === 'downrigger') Veff *= 1.6;
+
+  const H = D_lure + D_line + 1e-6;
+  let theta = Math.atan2(Veff, H);
+  theta = clamp(theta, 0.5*Math.PI/180, 30*Math.PI/180); // 0.5°..30°
+
+  let z = L * Math.sin(theta);
+
+  // Kalibrierung
+  const scale = rig.calib?.scale ?? 1;
+  const bias  = rig.calib?.bias ?? 0;
+  z = z*scale + bias;
+
+  // Unsicherheitsband: ±(5% + 0.2 m)
+  const band = 0.2 + 0.05*z;
+  return { depth: z, band, theta, intern:{D_lure,D_line,Veff} };
+}
+
+function invertForTargetDepth(rig, target){
+  let lo=1, hi=400, best=30;
+  for (let i=0;i<30;i++){
+    const mid = (lo+hi)/2;
+    const test = computeDepth({...rig, lineLen: mid}).depth;
+    best = mid;
+    if (test < target) lo = mid; else hi = mid;
+  }
+  return Math.round(best);
+}
+function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+
+// ===== Chart =====
+const ctx = document.getElementById('chart').getContext('2d');
+function drawCurve(rig){
+  const W=ctx.canvas.width, H=ctx.canvas.height;
+  ctx.clearRect(0,0,W,H);
+  // Achsen
+  ctx.strokeStyle = '#2a394a'; ctx.lineWidth = 1.0;
+  ctx.beginPath(); ctx.moveTo(40,10); ctx.lineTo(40,H-30); ctx.lineTo(W-10,H-30); ctx.stroke();
+  // Daten
+  const xs=[], ys=[];
+  for (let L=5; L<=150; L+=5){
+    const d = computeDepth({...rig, lineLen:L}).depth;
+    xs.push(L); ys.push(d);
+  }
+  const xMax = 150;
+  const yMax = Math.max(8, Math.max(...ys, 1));
+
+  // Linie
+  ctx.strokeStyle = '#3aa675'; ctx.lineWidth = 2.0; ctx.beginPath();
+  xs.forEach((x,i)=>{
+    const y=ys[i];
+    const px = map(x, 0, xMax, 40, W-10);
+    const py = map(y, 0, yMax, H-30, 10);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  });
+  ctx.stroke();
+
+  // Ticks
+  ctx.fillStyle='#8aa0b2'; ctx.font='12px system-ui';
+  for (let x=0; x<=xMax; x+=30){ const px=map(x,0,xMax,40,W-10); ctx.fillText(x.toString(), px-6, H-12); }
+  for (let y=0; y<=yMax; y+=Math.max(1, Math.round(yMax/6))){ const py=map(y,0,yMax,H-30,10); ctx.fillText(y.toString(), 8, py+4); }
+  ctx.fillText('Schnurlänge (m)', W-150, H-10);
+  ctx.save(); ctx.translate(12,20); ctx.rotate(-Math.PI/2); ctx.fillText('Tiefe (m)', 0,0); ctx.restore();
+}
+function map(v,a,b,c,d){ return c+(v-a)*(d-c)/(b-a); }
+
+// ===== UI =====
+function recalc(){
+  const rig = uiToRig();
+  const res = computeDepth(rig);
+  document.getElementById('depthOut').textContent = res.depth.toFixed(2);
+  document.getElementById('bandOut').textContent = `±${res.band.toFixed(2)} m`;
+  const deg = res.theta*180/Math.PI;
+  document.getElementById('angleOut').textContent = `Schnurwinkel: ${deg.toFixed(1)}°`;
+  drawCurve(rig);
+  showCal(rig.calib);
+}
+function showCal(cal){
+  const s = `Kalibrierung aktiv: bias=${fmt(cal?.bias||0)} m, scale=${fmt(cal?.scale||1)}`;
+  document.getElementById('calInfo').textContent = s;
+}
+
+document.getElementById('btnSolve').onclick = recalc;
+document.getElementById('btnAim').onclick = ()=>{
+  const rig = uiToRig();
+  const t = num('targetDepth', null);
+  if(!t){ alert('Zieltiefe eingeben.'); return; }
+  const L = invertForTargetDepth(rig, t);
+  setv('lineLen', L); recalc();
+};
+document.getElementById('btnGPS').onclick = ()=>{
+  if (!('geolocation' in navigator)) { alert('GPS nicht verfügbar.'); return; }
+  navigator.geolocation.watchPosition(pos=>{
+    const spd = pos.coords.speed; // m/s (kann null sein)
+    if (spd!=null && !isNaN(spd)){
+      setv('speed', (spd*3.6).toFixed(1));
+      recalc();
+    }
+  }, err=>alert('GPS-Fehler: '+err.message), { enableHighAccuracy:true, maximumAge:1000, timeout:6000 });
+};
+document.getElementById('btnCal').onclick = ()=>{
+  const rig = uiToRig();
+  const istStr = prompt('Echolot-Isttiefe (m) für aktuelle Schnurlänge eingeben:');
+  if (!istStr) return;
+  const ist = parseFloat(istStr);
+  const pred = computeDepth(rig).depth;
+  // 1-Punkt-Bias + leichte Scale-Korrektur
+  const delta = ist - pred;
+  const idx = rigs.findIndex(r=>r.id===currentRigId);
+  if (idx>=0){
+    const old = rigs[idx].calib || {bias:0, scale:1};
+    const scale = clamp(old.scale * (ist/(pred||0.001)), 0.7, 1.4);
+    rigs[idx].calib = { bias: (old.bias||0)+delta*0.6, scale };
+    saveRigs(); recalc();
+  }
+};
+document.getElementById('btnResetCal').onclick = ()=>{
+  if (!currentRigId) return;
+  const idx = rigs.findIndex(r=>r.id===currentRigId);
+  if (idx>=0){ rigs[idx].calib = {bias:0, scale:1}; saveRigs(); recalc(); }
+};
+
+// Library
+document.getElementById('btnNew').onclick = ()=>{
+  const r = uiToRig(); r.name = prompt('Rigname:', suggestName()) || suggestName();
+  currentRigId = r.id; rigs.push(r); saveRigs(); refreshSelect(); recalc();
+};
+document.getElementById('btnSave').onclick = ()=>{
+  const r = uiToRig();
+  if(!currentRigId){ r.name = prompt('Rigname:', suggestName()) || suggestName(); rigs.push(r); currentRigId=r.id; }
+  else{
+    const idx = rigs.findIndex(x=>x.id===currentRigId);
+    if(idx>=0){ r.name = rigs[idx].name; rigs[idx]=r; }
+    else { rigs.push(r); }
+  }
+  saveRigs(); refreshSelect(); recalc();
+};
+document.getElementById('btnDup').onclick = ()=>{
+  if(!currentRigId) return;
+  const orig = rigs.find(r=>r.id===currentRigId); if(!orig) return;
+  const copy = { ...orig, id: crypto.randomUUID(), name: orig.name+' (Kopie)' };
+  rigs.push(copy); currentRigId = copy.id; saveRigs(); refreshSelect(); rigToUI(copy); recalc();
+};
+document.getElementById('btnDel').onclick = ()=>{
+  if(!currentRigId) return;
+  if(!confirm('Rig wirklich löschen?')) return;
+  rigs = rigs.filter(r=>r.id!==currentRigId); currentRigId=null; saveRigs(); refreshSelect(); recalc();
+};
+// Export / Import
+document.getElementById('btnExport').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(rigs, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='trolling-rigs.json'; a.click();
+};
+document.getElementById('btnImport').onclick = async ()=>{
+  const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
+  inp.onchange = async ()=> {
+    const file = inp.files[0]; if(!file) return;
+    const text = await file.text();
+    try {
+      const arr = JSON.parse(text);
+      if (Array.isArray(arr)){ rigs = arr; currentRigId = rigs[0]?.id || null; saveRigs(); refreshSelect(); if (rigs[0]) rigToUI(rigs[0]); recalc(); }
+      else alert('Ungültiges JSON.');
+    } catch(e){ alert('Importfehler: '+e.message); }
+  };
+  inp.click();
+};
+document.getElementById('rigSelect').onchange = (e)=>{
+  currentRigId = e.target.value;
+  const r = rigs.find(x=>x.id===currentRigId); if(r) rigToUI(r);
+  recalc();
+};
+
+// Init
+if (rigs.length===0){
+  rigs.push({
+    id: crypto.randomUUID(),
+    name: 'Wobbler 40g • Geflecht 0.18',
+    lineLen:30, speed:3.2, lineType:'braid', lineDia:0.18,
+    lureType:'wobbler', lureMass:40, snapDive:3.5, inlineWeight:0, targetDepth:null,
+    calib:{bias:0, scale:1}
+  });
+}
+currentRigId = rigs[0].id;
+refreshSelect(); rigToUI(rigs[0]); recalc();
+</script>
+</body>
+</html>
